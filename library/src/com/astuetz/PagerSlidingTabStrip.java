@@ -16,6 +16,8 @@
 
 package com.astuetz;
 
+import java.util.Locale;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -23,6 +25,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -39,14 +42,14 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.Locale;
-
 import com.astuetz.pagerslidingtabstrip.R;
 
 public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 	public interface IconTabProvider {
 		public int getPageIconResId(int position);
+
+		public Drawable getPageIconDrawable(int position);
 	}
 
 	// @formatter:off
@@ -195,7 +198,16 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 		for (int i = 0; i < tabCount; i++) {
 
 			if (pager.getAdapter() instanceof IconTabProvider) {
-				addIconTab(i, ((IconTabProvider) pager.getAdapter()).getPageIconResId(i));
+				int id = ((IconTabProvider) pager.getAdapter()).getPageIconResId(i);
+				Drawable drawable;
+				if (id != -1) {
+					addIconTab(i, id);
+				} else if ((drawable = ((IconTabProvider) pager.getAdapter()).getPageIconDrawable(i)) != null) {
+					addIconTab(i, drawable);
+				} else {
+					// fall back to text tab
+					addTextTab(i, pager.getAdapter().getPageTitle(i).toString());
+				}
 			} else {
 				addTextTab(i, pager.getAdapter().getPageTitle(i).toString());
 			}
@@ -238,6 +250,15 @@ public class PagerSlidingTabStrip extends HorizontalScrollView {
 
 		ImageButton tab = new ImageButton(getContext());
 		tab.setImageResource(resId);
+
+		addTab(position, tab);
+
+	}
+
+	private void addIconTab(final int position, Drawable drawable) {
+
+		ImageButton tab = new ImageButton(getContext());
+		tab.setImageDrawable(drawable);
 
 		addTab(position, tab);
 
